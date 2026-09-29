@@ -1,1 +1,43 @@
+name: Build Android APK
 
+on:
+  workflow_dispatch:
+    inputs:
+      app_url:
+        description: "Your live website URL"
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Bubblewrap
+        run: npm install -g @bubblewrap/cli
+
+      - name: Create Android project
+        run: |
+          mkdir twa
+          cd twa
+          bubblewrap init \
+            --manifest="${{ inputs.app_url }}/manifest.json" \
+            --directory=.
+
+      - name: Build APK
+        working-directory: twa
+        run: bubblewrap build --skipPwaValidation
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release
+          path: twa/app-release-signed.apk
